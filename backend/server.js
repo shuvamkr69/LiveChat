@@ -2,14 +2,26 @@ import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import path from 'node:path';
 
 const app = express();
 app.use(cors());
 
+// Serve the frontend from "../frontend/live-chat/dist"
+const __dirname = path.resolve();  // Get absolute path
+const frontendPath = path.join(__dirname, '../frontend/live-chat/dist');
+
+app.use(express.static(frontendPath));
+
+// Serve index.html for all routes (SPA support)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: '*',
   },
 });
 
@@ -20,7 +32,7 @@ app.get('/', (req, res) => {
 const users = {}; // Store users by socket ID
 
 io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
+  console.log(`User connected: ${socket.id} from ${socket.handshake.address}`);
 
   // Store username when user joins
   socket.on("setUsername", (username) => {
@@ -41,6 +53,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log('Server running at http://localhost:3000');
+server.listen(3000, '0.0.0.0' , () => {
+  console.log('Server running at http://10.22.55.165:3000');
 });
